@@ -333,42 +333,41 @@ VOID intel::vmcs::VMXInitGuestState(ULONG64 GuestRip, ULONG64 GuestRsp)
 
 	//属性
 	ULONG attr = (trItem[1] & 0x00F0FF00) >> 8;
-	__vmx_vmwrite(GUEST_TR_BASE, trBase.QuadPart);
-	__vmx_vmwrite(GUEST_TR_LIMIT, trlimit);
-	__vmx_vmwrite(GUEST_TR_AR_BYTES, attr);
-	__vmx_vmwrite(GUEST_TR_SELECTOR, trSelector);
+	__vmx_vmwrite(VMCS_GUEST_TR_BASE, trBase.QuadPart);
+	__vmx_vmwrite(VMCS_GUEST_TR_LIMIT, trlimit);
+	__vmx_vmwrite(VMCS_GUEST_TR_ACCESS_RIGHTS, attr);
+	__vmx_vmwrite(VMCS_GUEST_TR_SELECTOR, trSelector);
 
-	__vmx_vmwrite(GUEST_IA32_DEBUGCTL, __readmsr(IA32_DEBUGCTL));
-	__vmx_vmwrite(GUEST_IA32_PAT, __readmsr(IA32_PAT));
-	__vmx_vmwrite(GUEST_IA32_EFER, __readmsr(IA32_EFER));
+	__vmx_vmwrite(VMCS_GUEST_DEBUGCTL, __readmsr(IA32_DEBUGCTL));
+	__vmx_vmwrite(VMCS_GUEST_PAT, __readmsr(IA32_PAT));
+	__vmx_vmwrite(VMCS_GUEST_EFER, __readmsr(IA32_EFER));
 
-	__vmx_vmwrite(GUEST_FS_BASE, __readmsr(IA32_FS_BASE));
-	__vmx_vmwrite(GUEST_GS_BASE, __readmsr(IA32_GS_BASE));
+	__vmx_vmwrite(VMCS_GUEST_FS_BASE, __readmsr(IA32_FS_BASE));
+	__vmx_vmwrite(VMCS_GUEST_GS_BASE, __readmsr(IA32_GS_BASE));
 
-	__vmx_vmwrite(GUEST_SYSENTER_CS, __readmsr(0x174));
-	__vmx_vmwrite(GUEST_SYSENTER_ESP, __readmsr(0x175));
-	__vmx_vmwrite(GUEST_SYSENTER_EIP, __readmsr(0x176));
+	__vmx_vmwrite(VMCS_GUEST_SYSENTER_CS, __readmsr(IA32_SYSENTER_CS));
+	__vmx_vmwrite(VMCS_GUEST_SYSENTER_ESP, __readmsr(IA32_SYSENTER_ESP));
+	__vmx_vmwrite(VMCS_GUEST_SYSENTER_EIP, __readmsr(IA32_SYSENTER_EIP));
 
-
-	__vmx_vmwrite(GUEST_GDTR_BASE, gdtTable.base_address);
-	__vmx_vmwrite(GUEST_GDTR_LIMIT, gdtTable.limit);
+	__vmx_vmwrite(VMCS_GUEST_GDTR_BASE, gdtTable.base_address);
+	__vmx_vmwrite(VMCS_GUEST_GDTR_LIMIT, gdtTable.limit);
 
 	//设置虚拟机第一次的返回地址与堆栈
-	__vmx_vmwrite(GUEST_RSP, GuestRsp);
-	__vmx_vmwrite(GUEST_RIP, GuestRip);
+	__vmx_vmwrite(VMCS_GUEST_RSP, GuestRsp);
+	__vmx_vmwrite(VMCS_GUEST_RIP, GuestRip);
 
 	segment_descriptor_register_64 idtTable = { 0 };
 	__sidt(&idtTable);
-	__vmx_vmwrite(GUEST_IDTR_BASE, idtTable.base_address);
-	__vmx_vmwrite(GUEST_IDTR_LIMIT, idtTable.limit);
+	__vmx_vmwrite(VMCS_GUEST_IDTR_BASE, idtTable.base_address);
+	__vmx_vmwrite(VMCS_GUEST_IDTR_LIMIT, idtTable.limit);
 
-	__vmx_vmwrite(GUEST_CR0, __readcr0());
-	__vmx_vmwrite(GUEST_CR4, __readcr4());
-	__vmx_vmwrite(GUEST_CR3, __readcr3());
-	__vmx_vmwrite(GUEST_RFLAGS, __readeflags());
-	__vmx_vmwrite(GUEST_DR7, __readdr(7));
+	__vmx_vmwrite(VMCS_GUEST_CR0, __readcr0());
+	__vmx_vmwrite(VMCS_GUEST_CR4, __readcr4());
+	__vmx_vmwrite(VMCS_GUEST_CR3, __readcr3());
+	__vmx_vmwrite(VMCS_GUEST_RFLAGS, __readeflags());
+	__vmx_vmwrite(VMCS_GUEST_DR7, __readdr(7));
 
-	__vmx_vmwrite(VMCS_LINK_POINTER, -1);
+	__vmx_vmwrite(VMCS_GUEST_VMCS_LINK_POINTER, -1);
 
 }
 
@@ -396,35 +395,37 @@ VOID intel::vmcs::VMXInitHostState()
 	trBase.HighPart = trItem[2];
 
 	//属性
-	__vmx_vmwrite(HOST_TR_BASE, trBase.QuadPart);
-	__vmx_vmwrite(HOST_TR_SELECTOR, trSelector);
+	__vmx_vmwrite(VMCS_HOST_TR_BASE, trBase.QuadPart);
+	__vmx_vmwrite(VMCS_HOST_TR_SELECTOR, trSelector);
 
-	__vmx_vmwrite(HOST_ES_SELECTOR, AsmReadES() & 0xfff8);
-	__vmx_vmwrite(HOST_CS_SELECTOR, AsmReadCS() & 0xfff8);
-	__vmx_vmwrite(HOST_SS_SELECTOR, AsmReadSS() & 0xfff8);
-	__vmx_vmwrite(HOST_DS_SELECTOR, AsmReadDS() & 0xfff8);
-	__vmx_vmwrite(HOST_FS_SELECTOR, AsmReadFS() & 0xfff8);
-	__vmx_vmwrite(HOST_GS_SELECTOR, AsmReadGS() & 0xfff8);
-
-
-
-	__vmx_vmwrite(HOST_CR0, __readcr0());
-	__vmx_vmwrite(HOST_CR4, __readcr4());
-	__vmx_vmwrite(HOST_CR3, __readcr3());
-	__vmx_vmwrite(HOST_RSP, (ULONG64)vmxCpu->VmHostStackBase);
-	__vmx_vmwrite(HOST_RIP, (size_t)&AsmVmxExitHandler);
+	__vmx_vmwrite(VMCS_HOST_ES_SELECTOR, AsmReadES() & 0xfff8);
+	__vmx_vmwrite(VMCS_HOST_CS_SELECTOR, AsmReadCS() & 0xfff8);
+	__vmx_vmwrite(VMCS_HOST_SS_SELECTOR, AsmReadSS() & 0xfff8);
+	__vmx_vmwrite(VMCS_HOST_DS_SELECTOR, AsmReadDS() & 0xfff8);
+	__vmx_vmwrite(VMCS_HOST_FS_SELECTOR, AsmReadFS() & 0xfff8);
+	__vmx_vmwrite(VMCS_HOST_GS_SELECTOR, AsmReadGS() & 0xfff8);
 
 
-	__vmx_vmwrite(HOST_IA32_PAT, __readmsr(IA32_PAT));
-	__vmx_vmwrite(HOST_IA32_EFER, __readmsr(IA32_EFER));
+
+	__vmx_vmwrite(VMCS_HOST_CR0, __readcr0());
+	__vmx_vmwrite(VMCS_HOST_CR4, __readcr4());
+	__vmx_vmwrite(VMCS_HOST_CR3, __readcr3());
+	__vmx_vmwrite(VMCS_HOST_RSP, (ULONG64)(ULONG64)vmxCpu->VmHostStackBase);
+	__vmx_vmwrite(VMCS_HOST_RIP, (size_t)&AsmVmxExitHandler);
+
+
+	__vmx_vmwrite(VMCS_HOST_PAT, __readmsr(IA32_PAT));
+	__vmx_vmwrite(VMCS_HOST_EFER, __readmsr(IA32_EFER));
+
 	//__vmx_vmwrite(HOST_IA32_PERF_GLOBAL_CTRL, __readmsr(IA32_PERF_GLOBAL_CTRL));
 
-	__vmx_vmwrite(HOST_FS_BASE, __readmsr(IA32_FS_BASE)); 
-	__vmx_vmwrite(HOST_GS_BASE, __readmsr(IA32_GS_BASE));
 
-	__vmx_vmwrite(HOST_IA32_SYSENTER_CS, __readmsr(0x174));
-	__vmx_vmwrite(HOST_IA32_SYSENTER_ESP, __readmsr(0x175));
-	__vmx_vmwrite(HOST_IA32_SYSENTER_EIP, __readmsr(0x176));
+	__vmx_vmwrite(VMCS_HOST_FS_BASE, __readmsr(IA32_FS_BASE));
+	__vmx_vmwrite(VMCS_HOST_GS_BASE, __readmsr(IA32_GS_BASE));
+
+	__vmx_vmwrite(VMCS_HOST_SYSENTER_CS, __readmsr(IA32_SYSENTER_CS));
+	__vmx_vmwrite(VMCS_HOST_SYSENTER_ESP, __readmsr(IA32_SYSENTER_ESP));
+	__vmx_vmwrite(VMCS_HOST_SYSENTER_EIP, __readmsr(IA32_SYSENTER_EIP));
 
 
 	//IDT GDT
@@ -432,8 +433,8 @@ VOID intel::vmcs::VMXInitHostState()
 	segment_descriptor_register_64 idtTable;
 	__sidt(&idtTable);
 
-	__vmx_vmwrite(HOST_GDTR_BASE, gdtTable.base_address);
-	__vmx_vmwrite(HOST_IDTR_BASE, idtTable.base_address);
+	__vmx_vmwrite(VMCS_HOST_GDTR_BASE, gdtTable.base_address);
+	__vmx_vmwrite(VMCS_HOST_IDTR_BASE, idtTable.base_address);
 }
 
 VOID intel::vmcs::InitEntry()
@@ -467,20 +468,20 @@ VOID intel::vmcs::VMXInitControl()
 
 	PVMXCPU vmxCpu =utils::VmxGetCurrentEntry();
 
-	ULONG64 contorlmsr = VmxIsControlTure() ? 0x48D : 0x481;
-	ULONG64 Proccontorlmsr = VmxIsControlTure() ? 0x48E : 0x482;
+	ULONG64 contorlmsr = VmxIsControlTure() ? IA32_VMX_TRUE_PINBASED_CTLS : IA32_VMX_PINBASED_CTLS;
+	ULONG64 Proccontorlmsr = VmxIsControlTure() ? IA32_VMX_TRUE_PROCBASED_CTLS : IA32_VMX_PROCBASED_CTLS;
 
 	ULONG mark = 0;
 	ULONG64 msrValue = VmxAdjustControlValue( contorlmsr, mark);
 
-	__vmx_vmwrite(PIN_BASED_VM_EXEC_CONTROL, msrValue);
+	__vmx_vmwrite(VMCS_CTRL_PIN_BASED_VM_EXECUTION_CONTROLS, msrValue);
 
 
 
 	mark = 0x10000000 | 0x80000000;
 	msrValue = VmxAdjustControlValue( Proccontorlmsr, mark);
 
-	__vmx_vmwrite(CPU_BASED_VM_EXEC_CONTROL, msrValue);
+	__vmx_vmwrite(VMCS_CTRL_PROCESSOR_BASED_VM_EXECUTION_CONTROLS, msrValue);
 
 
 	//VmxSetReadMsrBitMap(vmxCpu->VmMsrBitMap, 0xc0000082, TRUE);
@@ -500,6 +501,6 @@ VOID intel::vmcs::VMXInitControl()
 	//	mark |= SECONDARY_EXEC_ENABLE_EPT;
 	//	__vmx_vmwrite(EPT_POINTER, vmxCpu->eptp->Flags);
 	//}
-	msrValue = VmxAdjustControlValue( 0x48B, mark);
-	__vmx_vmwrite(SECONDARY_VM_EXEC_CONTROL, msrValue);
+	msrValue = VmxAdjustControlValue(IA32_VMX_PROCBASED_CTLS2, mark);
+	__vmx_vmwrite(VMCS_CTRL_SECONDARY_PROCESSOR_BASED_VM_EXECUTION_CONTROLS, msrValue);
 }
